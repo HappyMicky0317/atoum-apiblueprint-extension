@@ -1,0 +1,47 @@
+FORMAT: 1A
+HOST: https://example.org/
+
+# API Name
+
+# R 1 [/group/a/resource/1]
+
+## Foo Bar [GET]
+
++ Response 200
+
+---[to]---
+
+namespace atoum\apiblueprint\generated;
+
+class API Name extends \atoum\apiblueprint\test
+{
+    protected $_host = null;
+
+    public function beforeTestMethod($testMethod)
+    {
+        $this->_host = 'https://example.org/';
+    }
+
+    public function test resource r 1 action foo bar transaction 0()
+    {
+        $requester = new \atoum\apiblueprint\Http\Requester();
+        $expectedResponses = [];
+
+        $requester->addRequest(
+            'GET',
+            $this->_host . '/group/a/resource/1',
+            [
+            ]
+        );
+        $expectedResponses[] = [
+            'statusCode' => 200,
+            'mediaType'  => '',
+            'headers'    => [
+            ],
+            'body'       => '',
+            'schema'     => '',
+        ];
+
+        $this->responsesMatch($requester->send(), $expectedResponses);
+    }
+}

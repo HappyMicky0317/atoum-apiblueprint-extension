@@ -1,0 +1,79 @@
+FORMAT: 1A
+HOST: https://example.org/
+
+# API Name
+
+# R 1 [/group/a/resource/1]
+
+## Foo Bar [GET /group/a/resource/1/action/foo-bar]
+
++ Request A (media/type1)
+
+  + Headers
+
+    Foo: Bar
+    Baz: Qux
+
+  + Schema
+
+    {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string"
+            }
+        }
+    }
+
++ Response 200 (media/type2)
+
+  + Headers
+
+    ooF: raB
+    zaB: xuQ
+
+  + Body
+
+    Hello
+
+---[to]---
+
+namespace atoum\apiblueprint\generated;
+
+class API Name extends \atoum\apiblueprint\test
+{
+    protected $_host = null;
+
+    public function beforeTestMethod($testMethod)
+    {
+        $this->_host = 'https://example.org/';
+    }
+
+    public function test resource r 1 action foo bar transaction 0()
+    {
+        $requester = new \atoum\apiblueprint\Http\Requester();
+        $expectedResponses = [];
+
+        $requester->addRequest(
+            'GET',
+            $this->_host . '/group/a/resource/1/action/foo-bar',
+            [
+                'foo' => 'Bar',
+                'baz' => 'Qux',
+            ]
+        );
+        $expectedResponses[] = [
+            'statusCode' => 200,
+            'mediaType'  => 'media/type2',
+            'headers'    => [
+                'oof' => 'raB',
+                'zab' => 'xuQ',
+            ],
+            'body'       => 'Hello',
+            'schema'     => '',
+        ];
+
+        $this->responsesMatch($requester->send(), $expectedResponses);
+    }
+}

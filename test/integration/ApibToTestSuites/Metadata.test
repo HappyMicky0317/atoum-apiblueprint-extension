@@ -1,0 +1,16 @@
+FORMAT: 1A
+HOST: https://example.org/
+
+---[to]---
+
+namespace atoum\apiblueprint\generated;
+
+class Unknown0e17030576bafa1b4700220c87de294f5d979c96 extends \atoum\apiblueprint\test
+{
+    protected $_host = null;
+
+    public function beforeTestMethod($testMethod)
+    {
+        $this->_host = 'https://example.org/';
+    }
+}

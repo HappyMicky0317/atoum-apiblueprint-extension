@@ -1,0 +1,43 @@
+FORMAT: 1A
+HOST: https://example.org/
+
+# API Name
+
+# R 1 [/group/a/resource/1]
+
+## Foo Bar [GET /group/a/resource/1/action/foo-bar]
+
+## Baz Qux [GET]
+
+# R 2 [/group/a/resource/2]
+
+## GET
+
+---[to]---
+
+namespace atoum\apiblueprint\generated;
+
+class API Name extends \atoum\apiblueprint\test
+{
+    protected $_host = null;
+
+    public function beforeTestMethod($testMethod)
+    {
+        $this->_host = 'https://example.org/';
+    }
+
+    public function test resource r 1 action foo bar()
+    {
+        $this->skip('Action `Foo Bar` for the resource `R 1` has no message.');
+    }
+
+    public function test resource r 1 action baz qux()
+    {
+        $this->skip('Action `Baz Qux` for the resource `R 1` has no message.');
+    }
+
+    public function test resource r 2 action unknown0()
+    {
+        $this->skip('Action `` for the resource `R 2` has no message.');
+    }
+}

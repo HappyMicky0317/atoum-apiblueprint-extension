@@ -1,0 +1,22 @@
+FORMAT: 1A
+HOST: http://127.0.0.1:8888/
+
+# Schema
+
+# R 1 [/schema]
+
+## Foo Bar [GET]
+
++ Response 200 (application/json)
+
+  + Schema
+
+    {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string"
+            }
+        }
+    }

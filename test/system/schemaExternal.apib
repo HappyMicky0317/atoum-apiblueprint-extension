@@ -1,0 +1,16 @@
+FORMAT: 1A
+HOST: http://127.0.0.1:8888/
+
+# External Schema
+
+# R 1 [/schema]
+
+## Foo Bar [GET]
+
++ Response 200 (application/json)
+
+  + Schema
+
+    {
+        "$ref": "json-schema://test/schema1.json"
+    }

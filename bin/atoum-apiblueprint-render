@@ -1,0 +1,217 @@
+#!/usr/bin/env php
+<?php
+
+use Hoa\Ustring\Ustring;
+use League\CommonMark;
+use atoum\apiblueprint\Finder;
+use atoum\apiblueprint\Parser;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+class HeadingRenderer implements CommonMark\Block\Renderer\BlockRendererInterface
+{
+    protected static $idNumber = 0;
+
+    public function render(CommonMark\Block\Element\AbstractBlock $block, CommonMark\ElementRendererInterface $htmlRenderer, $inTightList = false)
+    {
+        $tag    = 'h' . $block->getLevel();
+        $class  = '';
+        $parser = new Parser();
+
+        $blockContent = $parser->getHeaderContent($block);
+
+        switch ($parser->getHeaderType($blockContent, $headerMatches)) {
+            case Parser::HEADER_GROUP:
+                $class = 'heading--type-group';
+
+                break;
+
+            case Parser::HEADER_RESOURCE:
+                $class = 'heading--type-resource';
+
+                break;
+
+            case Parser::HEADER_ACTION:
+                $class = 'heading--type-action';
+
+                break;
+
+            default:
+                if (1 === $block->getLevel()) {
+                    $class = 'heading--type-description';
+                }
+        }
+
+        foreach ($block->getData('attributes', []) as $key => $value) {
+            $attributes[$key] = CommonMark\Util\Xml::escape($value, true);
+        }
+
+        $isFirstHeadingAtThisLevel = true;
+        $previous                  = $block;
+        $deltaPreviousLevel        = 1;
+
+        do {
+            $previous = $previous->previous();
+
+            if ($previous instanceof CommonMark\Block\Element\Heading) {
+                if ($previous->getLevel() < $block->getLevel()) {
+                    $isFirstHeadingAtThisLevel = true;
+                    $deltaPreviousLevel        = 1;
+                } else {
+                    $isFirstHeadingAtThisLevel = false;
+                    $deltaPreviousLevel        = $previous->getLevel() - $block->getLevel() + 1;
+                }
+
+                break;
+            }
+        } while (null !== $previous);
+
+        $id =
+            (new UString($block->getStringContent()))
+                ->toAscii()
+                ->replace('/[^a-zA-Z0-9]+/', '-')
+                ->toLowerCase() .
+            '-' .
+            (self::$idNumber++);
+
+        return
+            (true === $isFirstHeadingAtThisLevel && 1 === $block->getLevel() ? '' : '</div>') .
+            (false === $isFirstHeadingAtThisLevel ? str_repeat('</div>', $deltaPreviousLevel) : '') .
+            '<div class="' . $class . '">' .
+            '<' . $tag . ' id="' . $id . '">' .
+            $htmlRenderer->renderInlines($block->children()) .
+            '</' . $tag . '>' .
+            '<div>';
+    }
+}
+
+class ParagraphRenderer implements CommonMark\Block\Renderer\BlockRendererInterface
+{
+    public function render(CommonMark\Block\Element\AbstractBlock $block, CommonMark\ElementRendererInterface $htmlRenderer, $inTightList = false)
+    {
+        if (true === $inTightList) {
+            return $htmlRenderer->renderInlines($block->children());
+        }
+
+        $attributes = [];
+
+        foreach ($block->getData('attributes', []) as $key => $value) {
+            $attributes[$key] = Xml::escape($value, true);
+        }
+
+        $metadata = true;
+
+        foreach ($block->children() as $child) {
+            if ($child instanceof CommonMark\Inline\Element\Text &&
+                0 === preg_match('/^([^:]+):(.*)$/', $child->getContent(), $match)) {
+                $metadata = false;
+
+                break;
+            }
+        }
+
+        if (true === $metadata) {
+            $attributes['class'] = 'metadata';
+        }
+
+        return new CommonMark\HtmlElement('p', $attributes, $htmlRenderer->renderInlines($block->children()));
+    }
+}
+
+
+function stdout(string $message)
+{
+    file_put_contents('php://stdout', $message);
+}
+
+function stderr(string $message)
+{
+    file_put_contents('php://stderr', $message);
+}
+
+function usage()
+{
+    stdout(
+        'Usage: ' . $_SERVER['argv'][0] . ' [<options>] [<paths>]' . "\n" .
+        'Options: ' . "\n" .
+        '  -t, --title: Documentation title.' . "\n" .
+        '  -h, --help : This help.' . "\n"
+    );
+}
+
+function render(Finder $finder, string $title)
+{
+    $environment = CommonMark\Environment::createCommonMarkEnvironment();
+    $environment->addBlockRenderer(CommonMark\Block\Element\Heading::class, new HeadingRenderer());
+    $environment->addBlockRenderer(CommonMark\Block\Element\Paragraph::class, new ParagraphRenderer());
+
+    $configuration = ['html_input' => 'escape'];
+    $compiler      = new CommonMark\CommonMarkConverter($configuration, $environment);
+
+    $body = (function () use ($finder, $compiler) {
+        foreach ($finder as $file) {
+            yield '<section>' . "\n";
+            yield $compiler->convertToHtml(file_get_contents($file->getPathname()));
+            yield '</section>' . "\n";
+        }
+    })();
+
+    (function () use ($title, $body) {
+        require dirname(__DIR__) . '/res/template/html.php';
+    })();
+}
+
+if (count($_SERVER['argv']) === 1) {
+    usage();
+
+    exit(1);
+}
+
+$arguments          = array_slice($_SERVER['argv'], 1);
+$finder             = new Finder();
+$hasOnePath         = false;
+$title              = '(untitled)';
+$optionPointer      = null;
+$optionExpectsValue = false;
+
+foreach ($arguments as $i => $argument) {
+    switch ($argument) {
+        case '-t':
+        case '--title':
+            $optionPointer      = &$title;
+            $optionExpectsValue = true;
+
+            break;
+
+        case '-h':
+        case '--help':
+            usage();
+
+            exit(1);
+
+        default:
+            if (true === $optionExpectsValue) {
+                $optionPointer      = $argument;
+                $optionExpectsValue = false;
+                unset($optionPointer);
+
+                break;
+            }
+
+            if (0 !== preg_match('/(--?.+)/', $argument, $match)) {
+                stderr('Unrecognized option `' . $match[1] . '`.' . "\n");
+            } else {
+                $hasOnePath = true;
+                $finder->append(new FilesystemIterator($argument));
+            }
+    }
+}
+
+if (false === $hasOnePath) {
+    stderr('The path is missing.' . "\n\n");
+    usage();
+
+    exit(2);
+}
+
+render($finder, $title);

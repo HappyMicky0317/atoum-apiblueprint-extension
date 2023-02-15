@@ -1,0 +1,38 @@
+{
+    "name"       : "atoum/apiblueprint-extension",
+    "type"       : "library",
+    "description": "Compile and run tests written in the API Blueprint format (`.apib`) with atoum",
+    "keywords"   : ["atoum", "test", "atoum-extension", "apiblueprint"],
+    "homepage"   : "http://www.atoum.org",
+    "license"    : "MIT",
+    "authors"    : [
+        {
+            "name" : "Ivan Enderlin",
+            "email": "ivan.enderlin@hoa-project.net"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "atoum\\apiblueprint\\"      : "src",
+            "atoum\\apiblueprint\\test\\": "test"
+        }
+    },
+    "require": {
+        "php"                      : ">7.0",
+        "ext-curl"                 : "*",
+        "ext-mbstring"             : "*",
+        "atoum/atoum"              : "~3.2",
+        "hoa/ustring"              : "~4.0",
+        "justinrainbow/json-schema": "~5.2",
+        "league/commonmark"        : "~0.16"
+    },
+    "require-dev": {
+        "hoa/dispatcher": "~1.0",
+        "hoa/router"    : "~3.0"
+    },
+    "minimum-stability": "beta",
+    "scripts": {
+        "test": "php -S 127.0.0.1:8888 -t test/system/ > /dev/null 2>&1 & test_php_pid=$!; vendor/bin/atoum --test-ext --debug --force-terminal; kill $test_php_pid"
+    },
+    "bin": ["bin/atoum-apiblueprint-render"]
+}
